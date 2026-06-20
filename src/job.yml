@@ -2,7 +2,7 @@ $schema: https://azuremlschemas.azureedge.net/latest/commandJob.schema.json
 code: .
 command: python train.py --reg_rate 0.05
 environment: azureml://registries/azureml/environments/sklearn-1.5/labels/latest
-compute: azureml:kailashloharvnit1
+compute: azureml:aml-cluster
 display_name: diabetes-train-via-github-actions
 experiment_name: github-actions-experiment
 description: Training job triggered by GitHub Actions

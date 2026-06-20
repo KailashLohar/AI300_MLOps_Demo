@@ -1,5 +1,5 @@
 $schema: https://azuremlschemas.azureedge.net/latest/commandJob.schema.json
-code: src
+code: .
 command: python train.py --reg_rate 0.05
 environment: azureml://registries/azureml/environments/sklearn-1.5/labels/latest
 compute: azureml:kailashloharvnit1

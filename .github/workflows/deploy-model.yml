@@ -1,0 +1,70 @@
+name: Deploy Model to Production
+
+on:
+  workflow_dispatch:
+  # Trigger when a new model is registered (via repository_dispatch in real MLOps)
+  # For learning, manual trigger is enough
+
+jobs:
+  # ============================================================
+  # JOB 1: Create endpoint + deploy model
+  # ============================================================
+  deploy-model:
+    name: Deploy MLflow model
+    runs-on: ubuntu-latest
+    environment: production       # uses approval gate from Module 6
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Azure login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Install Azure ML CLI extension
+        run: az extension add --name ml --upgrade --yes
+
+      - name: Create or update endpoint
+        run: |
+          az ml online-endpoint create \
+            --file src/deploy/endpoint.yml \
+            --resource-group ai_300 \
+            --workspace-name azure-automl \
+            || echo "Endpoint already exists, continuing..."
+
+      - name: Deploy model to endpoint
+        run: |
+          az ml online-deployment create \
+            --file src/deploy/deployment.yml \
+            --all-traffic \
+            --resource-group ai_300 \
+            --workspace-name azure-automl
+
+  # ============================================================
+  # JOB 2: Test the deployment (only runs after deploy succeeds)
+  # ============================================================
+  test-deployment:
+    name: Test the deployed endpoint
+    needs: deploy-model            # 👈 only after deployment succeeds
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Azure login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Install Azure ML CLI extension
+        run: az extension add --name ml --upgrade --yes
+
+      - name: Invoke endpoint with sample request
+        run: |
+          az ml online-endpoint invoke \
+            --name diabetes-prod-endpoint \
+            --request-file src/deploy/sample-request.json \
+            --resource-group ai_300 \
+            --workspace-name azure-automl

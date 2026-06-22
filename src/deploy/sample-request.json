@@ -1,0 +1,18 @@
+{
+  "input_data": {
+    "columns": [
+      "Pregnancies",
+      "PlasmaGlucose",
+      "BMI",
+      "Age"
+    ],
+    "data": [
+      [
+        3,
+        180,
+        38.5,
+        45
+      ]
+    ]
+  }
+}

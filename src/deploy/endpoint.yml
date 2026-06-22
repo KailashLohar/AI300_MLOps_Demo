@@ -1,0 +1,4 @@
+$schema: https://azuremlschemas.azureedge.net/latest/managedOnlineEndpoint.schema.json
+name: diabetes-prod-endpoint
+auth_mode: key
+description: Production endpoint for diabetes classifier

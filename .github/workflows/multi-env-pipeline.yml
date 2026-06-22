@@ -1,0 +1,67 @@
+name: Multi-Environment ML Pipeline
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  # ============================================================
+  # JOB 1: Train model in DEVELOPMENT environment
+  # ============================================================
+  train-dev:
+    name: Train in Development
+    runs-on: ubuntu-latest
+    environment: development      # 👈 Loads 'development' environment secrets
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Azure login (dev SP)
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}    # Env-scoped secret
+
+      - name: Install Azure ML CLI extension
+        run: az extension add --name ml --upgrade --yes
+
+      - name: Train model in dev workspace
+        run: |
+          az ml job create \
+            --file src/job.yml \
+            --resource-group ai_300 \
+            --workspace-name azure-automl \
+            --set display_name="train-dev-\$(date +%s)" \
+                 experiment_name="dev-experiment"
+
+  # ============================================================
+  # JOB 2: Deploy to PRODUCTION (with approval gate)
+  # ============================================================
+  deploy-prod:
+    name: Deploy to Production
+    needs: train-dev              # 👈 Blocks run until train-dev completely succeeds
+    runs-on: ubuntu-latest
+    environment: production       # 👈 Triggers manual approval rules!
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Azure login (prod SP)
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}    # Prod-scoped secret
+
+      - name: Install Azure ML CLI extension
+        run: az extension add --name ml --upgrade --yes
+
+      - name: Simulate deployment to production
+        run: |
+          echo "🚀 Deploying model to production workspace..."
+          az ml job create \
+            --file src/job.yml \
+            --resource-group ai_300 \
+            --workspace-name azure-automl \
+            --set display_name="deploy-prod-\$(date +%s)" \
+                 experiment_name="prod-experiment"
+          echo "✅ Production deployment complete!"
